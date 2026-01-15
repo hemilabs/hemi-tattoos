@@ -1,0 +1,18 @@
+{
+  "extends": ["solhint:recommended"],
+  "rules": {
+    "prettier/prettier": "error",
+    "quotes": "off",
+    "compiler-version": "off",
+    "mark-callable-contracts": "off",
+    "not-rely-on-time": "off",
+    "use-natspec": "off",
+    "func-visibility": [
+      "warn",
+      {
+        "ignoreConstructors": true
+      }
+    ]
+  },
+  "plugins": ["prettier"]
+}
