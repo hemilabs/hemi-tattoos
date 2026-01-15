@@ -8,6 +8,7 @@ artifacts
 cache_hardhat
 deployments/localhost/*
 coverage*
+.env
 
 # node files
 node_modules
