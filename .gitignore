@@ -1,0 +1,20 @@
+
+# Compiler files
+cache/
+out/
+
+# Hardhat
+artifacts
+cache_hardhat
+deployments/localhost/*
+coverage*
+
+# node files
+node_modules
+
+# OS
+.DS_Store
+
+# TypeChain files
+/typechain
+/typechain-types
