@@ -24,16 +24,20 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: process.env.HEMI_SEPOLIA_RPC_URL || "",
+        url: "https://testnet.rpc.hemi.network/rpc",
       },
     },
     hemiSepolia: {
-      url: process.env.HEMI_SEPOLIA_RPC_URL || "",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      url: "https://testnet.rpc.hemi.network/rpc",
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+      },
     },
     hemi: {
-      url: process.env.HEMI_RPC_URL || "",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      url: "https://rpc.hemi.network/rpc",
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+      },
     },
   },
 };

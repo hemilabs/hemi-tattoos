@@ -13,7 +13,9 @@
     "build": "forge build",
     "format": "prettier --write 'src/**/*.sol'",
     "lint": "solhint 'src/**/*.sol'",
-    "check": "forge build && npm run lint"
+    "check": "forge build && npm run lint",
+    "deploy:hemi": "hardhat run scripts/deploy.ts --network hemi",
+    "deploy:hemiSepolia": "hardhat run scripts/deploy.ts --network hemiSepolia"
   },
   "keywords": [
     "blockchain",
