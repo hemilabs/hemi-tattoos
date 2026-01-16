@@ -1,0 +1,49 @@
+{
+  "name": "@hemilabs/hemi-tattoos-contracts",
+  "version": "1.0.0",
+  "description": "A soul-bound NFT collection for Hemi Tattoos, featuring two purchase tiers payable in hbUSD stablecoin.",
+  "private": true,
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "forge test",
+    "test:integration": "hardhat test",
+    "build": "forge build",
+    "format": "prettier --write 'src/**/*.sol'",
+    "lint": "solhint 'src/**/*.sol'",
+    "check": "forge build && npm run lint",
+    "deploy:hemi": "hardhat run scripts/deploy.ts --network hemi",
+    "deploy:hemiSepolia": "hardhat run scripts/deploy.ts --network hemiSepolia"
+  },
+  "keywords": [
+    "blockchain",
+    "erc721",
+    "eip-5192",
+    "hemi",
+    "hemilabs",
+    "hemi tatoos",
+    "nft"
+  ],
+  "author": {
+    "email": "gonzalo@hemi.xyz",
+    "name": "Gonzalo D'Elia"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "6.1.0",
+    "@openzeppelin/contracts": "5.4.0",
+    "@openzeppelin/contracts-upgradeable": "5.4.0",
+    "@tsconfig/node24": "24.0.3",
+    "@types/node": "24.10.2",
+    "dotenv": "17.2.3",
+    "forge-std": "github:foundry-rs/forge-std#v1.9.7",
+    "hardhat": "2.28.3",
+    "prettier": "3.5.3",
+    "prettier-plugin-solidity": "1.4.3",
+    "solhint": "6.0.2",
+    "solhint-plugin-prettier": "0.1.0",
+    "typescript": "5.9.3"
+  }
+}
