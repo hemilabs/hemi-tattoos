@@ -4,7 +4,8 @@
   "description": "A soul-bound NFT collection for Hemi Tattoos, featuring two purchase tiers payable in hbUSD stablecoin.",
   "private": true,
   "workspaces": [
-    "contracts"
+    "contracts",
+    "packages/*"
   ],
   "keywords": [
     "blockchain",
