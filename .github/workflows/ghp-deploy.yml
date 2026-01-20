@@ -19,6 +19,7 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       - uses: hemilabs/actions/setup-node-env@c86350368ebf1124e81813d1497fb44606f3b6c1 # v2.0.0
       - run: cd website && npm run build
+      - id: deployment
         uses: hemilabs/actions/deploy-to-ghp@c86350368ebf1124e81813d1497fb44606f3b6c1 # v2.0.0
         with:
           publish-dir: website/dist
