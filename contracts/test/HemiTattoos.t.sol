@@ -293,6 +293,182 @@ contract HemiTattoosTest is Test {
     assertTrue(hemiTattoos.supportsInterface(0x01ffc9a7)); // ERC165
   }
 
+  function testSupportsIERC721EnumerableInterface() public view {
+    assertTrue(hemiTattoos.supportsInterface(0x780e9d63)); // IERC721Enumerable
+  }
+
+  // ========== Enumerable Tests ==========
+
+  function testTotalSupplyStartsAtZero() public view {
+    assertEq(hemiTattoos.totalSupply(), 0);
+  }
+
+  function testTotalSupplyAfterMints() public {
+    // Mint first token
+    vm.startPrank(user1);
+    hbUSD.approve(address(hemiTattoos), 100 * 10 ** 18);
+    hemiTattoos.mintTier1();
+    vm.stopPrank();
+    assertEq(hemiTattoos.totalSupply(), 1);
+
+    // Mint second token
+    vm.startPrank(user2);
+    hbUSD.approve(address(hemiTattoos), 10 * 10 ** 18);
+    hemiTattoos.mintTier2();
+    vm.stopPrank();
+    assertEq(hemiTattoos.totalSupply(), 2);
+
+    // Mint third token
+    vm.startPrank(user3);
+    hbUSD.mint(user3, 100 * 10 ** 18);
+    hbUSD.approve(address(hemiTattoos), 100 * 10 ** 18);
+    hemiTattoos.mintTier1();
+    vm.stopPrank();
+    assertEq(hemiTattoos.totalSupply(), 3);
+  }
+
+  function testTokenByIndexSequential() public {
+    // Mint 3 tokens
+    vm.startPrank(user1);
+    hbUSD.approve(address(hemiTattoos), 100 * 10 ** 18);
+    hemiTattoos.mintTier1();
+    vm.stopPrank();
+
+    vm.startPrank(user2);
+    hbUSD.approve(address(hemiTattoos), 10 * 10 ** 18);
+    hemiTattoos.mintTier2();
+    vm.stopPrank();
+
+    vm.startPrank(user3);
+    hbUSD.mint(user3, 100 * 10 ** 18);
+    hbUSD.approve(address(hemiTattoos), 100 * 10 ** 18);
+    hemiTattoos.mintTier1();
+    vm.stopPrank();
+
+    // Verify sequential token IDs: 1, 2, 3
+    assertEq(hemiTattoos.tokenByIndex(0), 1);
+    assertEq(hemiTattoos.tokenByIndex(1), 2);
+    assertEq(hemiTattoos.tokenByIndex(2), 3);
+  }
+
+  function testTokenByIndexRevertsOutOfBounds() public {
+    // No tokens minted
+    vm.expectRevert();
+    hemiTattoos.tokenByIndex(0);
+
+    // Mint one token
+    vm.startPrank(user1);
+    hbUSD.approve(address(hemiTattoos), 100 * 10 ** 18);
+    hemiTattoos.mintTier1();
+    vm.stopPrank();
+
+    // Index 1 is out of bounds (only index 0 exists)
+    vm.expectRevert();
+    hemiTattoos.tokenByIndex(1);
+  }
+
+  function testTokenOfOwnerByIndexSuccess() public {
+    // Mint token for user1
+    vm.startPrank(user1);
+    hbUSD.approve(address(hemiTattoos), 100 * 10 ** 18);
+    uint256 tokenId = hemiTattoos.mintTier1();
+    vm.stopPrank();
+
+    // Primary use case: get user's token ID at index 0
+    assertEq(hemiTattoos.tokenOfOwnerByIndex(user1, 0), tokenId);
+    assertEq(hemiTattoos.tokenOfOwnerByIndex(user1, 0), 1);
+  }
+
+  function testTokenOfOwnerByIndexRevertsOutOfBounds() public {
+    // Mint token for user1
+    vm.startPrank(user1);
+    hbUSD.approve(address(hemiTattoos), 100 * 10 ** 18);
+    hemiTattoos.mintTier1();
+    vm.stopPrank();
+
+    // User can only have 1 token (at index 0), so index 1 should revert
+    vm.expectRevert();
+    hemiTattoos.tokenOfOwnerByIndex(user1, 1);
+  }
+
+  function testTokenOfOwnerByIndexRevertsNoTokens() public {
+    // User hasn't minted, should revert
+    vm.expectRevert();
+    hemiTattoos.tokenOfOwnerByIndex(user1, 0);
+  }
+
+  function testBalanceOfMatchesEnumeration() public {
+    // Initially no tokens
+    assertEq(hemiTattoos.balanceOf(user1), 0);
+
+    // Mint token
+    vm.startPrank(user1);
+    hbUSD.approve(address(hemiTattoos), 100 * 10 ** 18);
+    hemiTattoos.mintTier1();
+    vm.stopPrank();
+
+    // Balance should be 1
+    assertEq(hemiTattoos.balanceOf(user1), 1);
+
+    // Can enumerate the 1 token
+    assertEq(hemiTattoos.tokenOfOwnerByIndex(user1, 0), 1);
+  }
+
+  function testEnumerateAllTokens() public {
+    // Mint 3 tokens from different users
+    vm.startPrank(user1);
+    hbUSD.approve(address(hemiTattoos), 100 * 10 ** 18);
+    hemiTattoos.mintTier1();
+    vm.stopPrank();
+
+    vm.startPrank(user2);
+    hbUSD.approve(address(hemiTattoos), 10 * 10 ** 18);
+    hemiTattoos.mintTier2();
+    vm.stopPrank();
+
+    vm.startPrank(user3);
+    hbUSD.mint(user3, 100 * 10 ** 18);
+    hbUSD.approve(address(hemiTattoos), 100 * 10 ** 18);
+    hemiTattoos.mintTier1();
+    vm.stopPrank();
+
+    // Enumerate all tokens
+    uint256 total = hemiTattoos.totalSupply();
+    assertEq(total, 3);
+
+    for (uint256 i = 0; i < total; i++) {
+      uint256 tokenId = hemiTattoos.tokenByIndex(i);
+      address owner = hemiTattoos.ownerOf(tokenId);
+      assertTrue(owner != address(0));
+      assertEq(hemiTattoos.tokenOfOwnerByIndex(owner, 0), tokenId);
+    }
+  }
+
+  function testMultipleUsersEnumeration() public {
+    // Mint tokens for multiple users with different tiers
+    vm.startPrank(user1);
+    hbUSD.approve(address(hemiTattoos), 100 * 10 ** 18);
+    uint256 token1 = hemiTattoos.mintTier1();
+    vm.stopPrank();
+
+    vm.startPrank(user2);
+    hbUSD.approve(address(hemiTattoos), 10 * 10 ** 18);
+    uint256 token2 = hemiTattoos.mintTier2();
+    vm.stopPrank();
+
+    // Verify each user can query their own token
+    assertEq(hemiTattoos.tokenOfOwnerByIndex(user1, 0), token1);
+    assertEq(hemiTattoos.tokenOfOwnerByIndex(user2, 0), token2);
+
+    // Verify token tiers
+    assertEq(hemiTattoos.tokenTier(token1), 1);
+    assertEq(hemiTattoos.tokenTier(token2), 2);
+
+    // Verify balances
+    assertEq(hemiTattoos.balanceOf(user1), 1);
+    assertEq(hemiTattoos.balanceOf(user2), 1);
+  }
+
   // ========== Edge Cases ==========
 
   function testTokenIdZeroDoesNotExist() public {

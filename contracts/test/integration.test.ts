@@ -113,6 +113,13 @@ describe("HemiTattoos Integration Tests", function () {
       expect(metadata.name).to.equal("Hemi Tattoo #1");
       expect(metadata.description).to.equal("A soul-bound Hemi Tattoo NFT");
       expect(metadata.image).to.include("data:image/png;base64,");
+      expect(metadata.attributes).to.exist;
+      expect(metadata.attributes).to.be.an('array');
+      expect(metadata.attributes).to.have.lengthOf(1);
+      expect(metadata.attributes[0]).to.deep.equal({
+        trait_type: 'tier',
+        value: 1
+      });
     });
 
     it("Should prevent double minting", async function () {
@@ -155,6 +162,12 @@ describe("HemiTattoos Integration Tests", function () {
       expect(metadata.name).to.equal("Hemi Tattoo #2");
       expect(metadata.description).to.equal("A soul-bound Hemi Tattoo NFT");
       expect(metadata.image).to.include("data:image/png;base64,");
+      expect(metadata.attributes).to.exist;
+      expect(metadata.attributes).to.be.an('array');
+      expect(metadata.attributes[0]).to.deep.equal({
+        trait_type: 'tier',
+        value: 2
+      });
     });
   });
 
@@ -239,6 +252,161 @@ describe("Soul-Bound Functionality", function () {
 
     it("Should support ERC165 interface", async function () {
       expect(await hemiTattoos.supportsInterface("0x01ffc9a7")).to.be.true;
+    });
+
+    it("Should support IERC721Enumerable interface", async function () {
+      expect(await hemiTattoos.supportsInterface("0x780e9d63")).to.be.true;
+    });
+  });
+
+  describe("Enumerable Functionality", function () {
+    it("Should track totalSupply correctly", async function () {
+      // Already have 2 tokens minted from previous tests (user1 and user2)
+      const currentSupply = await hemiTattoos.totalSupply();
+      expect(currentSupply).to.be.greaterThan(0);
+
+      // Mint a new token with a fresh user
+      const newUser = (await hre.ethers.getSigners())[10];
+      await hbUSD.mint(newUser.address, hre.ethers.parseEther("1000"));
+      await hbUSD
+        .connect(newUser)
+        .approve(await hemiTattoos.getAddress(), TIER2_PRICE);
+      await hemiTattoos.connect(newUser).mintTier2();
+
+      // Verify totalSupply increased
+      expect(await hemiTattoos.totalSupply()).to.equal(currentSupply + 1n);
+    });
+
+    it("Should enumerate all tokens with tokenByIndex", async function () {
+      const totalSupply = await hemiTattoos.totalSupply();
+      expect(totalSupply).to.be.greaterThan(0);
+
+      // Enumerate all tokens
+      for (let i = 0; i < Number(totalSupply); i++) {
+        const tokenId = await hemiTattoos.tokenByIndex(i);
+        expect(tokenId).to.be.greaterThan(0);
+        // Verify token exists by checking owner
+        const owner = await hemiTattoos.ownerOf(tokenId);
+        expect(owner).to.not.equal(hre.ethers.ZeroAddress);
+      }
+    });
+
+    it("Should revert tokenByIndex for out of bounds", async function () {
+      const totalSupply = await hemiTattoos.totalSupply();
+      await expect(hemiTattoos.tokenByIndex(totalSupply)).to.be.reverted;
+      await expect(hemiTattoos.tokenByIndex(totalSupply + 1n)).to.be.reverted;
+    });
+
+    it("Should get user's token with tokenOfOwnerByIndex", async function () {
+      // Primary use case: query token ID for a user
+      const tokenId = await hemiTattoos.tokenOfOwnerByIndex(user1.address, 0);
+      expect(tokenId).to.equal(1); // user1 minted token #1
+
+      // Verify ownership
+      expect(await hemiTattoos.ownerOf(tokenId)).to.equal(user1.address);
+
+      // Verify tier
+      expect(await hemiTattoos.tokenTier(tokenId)).to.equal(1);
+    });
+
+    it("Should revert tokenOfOwnerByIndex for non-owner", async function () {
+      // user3 hasn't minted yet (only has 50 hbUSD, not enough for any tier)
+      await expect(hemiTattoos.tokenOfOwnerByIndex(user3.address, 0)).to.be
+        .reverted;
+    });
+
+    it("Should revert tokenOfOwnerByIndex for out of bounds", async function () {
+      // user1 only has 1 token (at index 0), so index 1 should revert
+      await expect(hemiTattoos.tokenOfOwnerByIndex(user1.address, 1)).to.be
+        .reverted;
+      await expect(hemiTattoos.tokenOfOwnerByIndex(user1.address, 999)).to.be
+        .reverted;
+    });
+
+    it("Should enumerate tokens for multiple owners", async function () {
+      // user1 has token #1 (Tier 1)
+      const token1 = await hemiTattoos.tokenOfOwnerByIndex(user1.address, 0);
+      expect(token1).to.equal(1);
+      expect(await hemiTattoos.tokenTier(token1)).to.equal(1);
+
+      // user2 has token #2 (Tier 2)
+      const token2 = await hemiTattoos.tokenOfOwnerByIndex(user2.address, 0);
+      expect(token2).to.equal(2);
+      expect(await hemiTattoos.tokenTier(token2)).to.equal(2);
+    });
+
+    it("Should match balanceOf with enumeration", async function () {
+      const balance = await hemiTattoos.balanceOf(user1.address);
+      expect(balance).to.equal(1);
+
+      // Should be able to enumerate exactly 'balance' number of tokens
+      for (let i = 0; i < Number(balance); i++) {
+        const tokenId = await hemiTattoos.tokenOfOwnerByIndex(user1.address, i);
+        expect(await hemiTattoos.ownerOf(tokenId)).to.equal(user1.address);
+      }
+
+      // Next index should revert
+      await expect(hemiTattoos.tokenOfOwnerByIndex(user1.address, balance)).to
+        .be.reverted;
+    });
+
+    it("Should support real-world usage pattern", async function () {
+      // Real-world scenario: Query if user has token and get its details
+      const userAddress = user1.address;
+
+      // Check if user has minted
+      const balance = await hemiTattoos.balanceOf(userAddress);
+
+      if (balance > 0n) {
+        // Get the token ID (always at index 0 for HemiTattoos)
+        const tokenId = await hemiTattoos.tokenOfOwnerByIndex(userAddress, 0);
+
+        // Get token details
+        const tier = await hemiTattoos.tokenTier(tokenId);
+        const metadata = await hemiTattoos.tokenURI(tokenId);
+        const isLocked = await hemiTattoos.locked(tokenId);
+
+        // Verify all data is consistent
+        expect(tokenId).to.be.greaterThan(0);
+        expect(tier).to.be.oneOf([1n, 2n]);
+        expect(metadata).to.include("data:application/json;base64,");
+        expect(isLocked).to.be.true;
+
+        // Verify ownership
+        expect(await hemiTattoos.ownerOf(tokenId)).to.equal(userAddress);
+      }
+    });
+
+    it("Should maintain enumeration after multiple mints", async function () {
+      const supplyBefore = await hemiTattoos.totalSupply();
+
+      // Mint with two new users
+      const newUser1 = (await hre.ethers.getSigners())[11];
+      const newUser2 = (await hre.ethers.getSigners())[12];
+
+      await hbUSD.mint(newUser1.address, hre.ethers.parseEther("1000"));
+      await hbUSD.mint(newUser2.address, hre.ethers.parseEther("1000"));
+
+      await hbUSD
+        .connect(newUser1)
+        .approve(await hemiTattoos.getAddress(), TIER1_PRICE);
+      await hemiTattoos.connect(newUser1).mintTier1();
+
+      await hbUSD
+        .connect(newUser2)
+        .approve(await hemiTattoos.getAddress(), TIER2_PRICE);
+      await hemiTattoos.connect(newUser2).mintTier2();
+
+      // Verify supply increased
+      const supplyAfter = await hemiTattoos.totalSupply();
+      expect(supplyAfter).to.equal(supplyBefore + 2n);
+
+      // Verify new users can query their tokens
+      const token1 = await hemiTattoos.tokenOfOwnerByIndex(newUser1.address, 0);
+      const token2 = await hemiTattoos.tokenOfOwnerByIndex(newUser2.address, 0);
+
+      expect(await hemiTattoos.ownerOf(token1)).to.equal(newUser1.address);
+      expect(await hemiTattoos.ownerOf(token2)).to.equal(newUser2.address);
     });
   });
 
