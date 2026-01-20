@@ -5,8 +5,14 @@
   "private": true,
   "workspaces": [
     "contracts",
-    "packages/*"
+    "packages/*",
+    "website"
   ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@hemilabs/hemi-tattoos-website",
+    "build": "npm run build --workspace=@hemilabs/hemi-tattoos-minter && npm run build --workspace=@hemilabs/hemi-tattoos-website",
+    "typecheck": "npm run typecheck --workspaces"
+  },
   "keywords": [
     "blockchain",
     "erc721",
