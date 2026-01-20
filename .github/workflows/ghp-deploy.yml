@@ -5,6 +5,9 @@ on:
     types:
       - published
 
+permissions:
+  pages: write
+
 concurrency:
   group: pages
   cancel-in-progress: false
