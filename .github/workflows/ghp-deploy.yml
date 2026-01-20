@@ -6,6 +6,7 @@ on:
       - published
 
 permissions:
+  id-token: write
   pages: write
 
 concurrency:
