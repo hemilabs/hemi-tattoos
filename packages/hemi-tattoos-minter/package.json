@@ -1,0 +1,27 @@
+{
+  "name": "@hemilabs/hemi-tattoos-minter",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./index.ts",
+    "./actions": "./src/actions/index.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "viem-erc20": "2.1.0"
+  },
+  "peerDependencies": {
+    "viem": "^2.x"
+  },
+  "devDependencies": {
+    "@tsconfig/node24": "24.0.4",
+    "@types/node": "24.10.2",
+    "typescript": "5.9.3",
+    "viem": "2.44.4",
+    "vitest": "4.0.7"
+  }
+}

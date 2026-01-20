@@ -1,13 +1,13 @@
 
 # Compiler files
-cache/
-out/
+contracts/cache/
+contracts/out/
 
 # Hardhat
-artifacts
-cache_hardhat
-deployments/localhost/*
-coverage*
+contracts/artifacts
+contracts/cache_hardhat
+contracts/deployments/localhost/*
+contracts/coverage*
 .env
 
 # node files
@@ -17,5 +17,8 @@ node_modules
 .DS_Store
 
 # TypeChain files
-/typechain
-/typechain-types
+contracts/typechain
+contracts/typechain-types
+
+# Website
+dist

@@ -2,6 +2,8 @@
 pragma solidity ^0.8.33;
 
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {ERC721Enumerable} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -20,7 +22,7 @@ interface IERC5192 {
   function locked(uint256 tokenId) external view returns (bool);
 }
 
-contract HemiTattoos is ERC721, IERC5192, ReentrancyGuard {
+contract HemiTattoos is ERC721Enumerable, IERC5192, ReentrancyGuard {
   using Strings for uint256;
   using SafeERC20 for IERC20;
 
@@ -130,7 +132,9 @@ contract HemiTattoos is ERC721, IERC5192, ReentrancyGuard {
         tokenId.toString(),
         '","description":"A soul-bound Hemi Tattoo NFT","image":"',
         fullImageUri,
-        '"}'
+        '","attributes":[{"trait_type":"tier","value":',
+        Strings.toString(tokenTier[tokenId]),
+        '}]}'
       )
     );
 
@@ -161,7 +165,7 @@ contract HemiTattoos is ERC721, IERC5192, ReentrancyGuard {
    */
   function supportsInterface(
     bytes4 interfaceId
-  ) public view override returns (bool) {
+  ) public view override(ERC721Enumerable) returns (bool) {
     return
       interfaceId == type(IERC5192).interfaceId ||
       super.supportsInterface(interfaceId);
@@ -176,7 +180,7 @@ contract HemiTattoos is ERC721, IERC5192, ReentrancyGuard {
     address to,
     uint256 tokenId,
     address auth
-  ) internal override returns (address) {
+  ) internal override(ERC721Enumerable) returns (address) {
     address from = _ownerOf(tokenId);
 
     // Allow minting (from == address(0)) and burning (to == address(0))
@@ -191,21 +195,21 @@ contract HemiTattoos is ERC721, IERC5192, ReentrancyGuard {
   /**
    * @dev Permanently disabled - soul-bound NFTs cannot be approved
    */
-  function approve(address, uint256) public pure override {
+  function approve(address, uint256) public pure override(ERC721, IERC721) {
     revert TransferNotAllowed();
   }
 
   /**
    * @dev Permanently disabled - soul-bound NFTs cannot be approved for all
    */
-  function setApprovalForAll(address, bool) public pure override {
+  function setApprovalForAll(address, bool) public pure override(ERC721, IERC721) {
     revert TransferNotAllowed();
   }
 
   /**
    * @dev Returns address(0) for all valid tokens (better wallet compatibility)
    */
-  function getApproved(uint256 tokenId) public view override returns (address) {
+  function getApproved(uint256 tokenId) public view override(ERC721, IERC721) returns (address) {
     _requireOwned(tokenId);
     return address(0);
   }
@@ -216,7 +220,7 @@ contract HemiTattoos is ERC721, IERC5192, ReentrancyGuard {
   function isApprovedForAll(
     address,
     address
-  ) public pure override returns (bool) {
+  ) public pure override(ERC721, IERC721) returns (bool) {
     return false;
   }
 }
